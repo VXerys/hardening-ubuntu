@@ -346,7 +346,7 @@ Setelah menambahkan whitelist, uji apakah aplikasi yang sebelumnya diblokir kini
 
 3. **Buat Pengguna Chroot**:  
    ```bash
-   sudo useradd -m -d /home/chroot_jail -s /bin/bash chroot_user
+   sudo useradd -M -d /home/chroot_jail -s /bin/bash chroot_user
    sudo passwd chroot_user
    ```
 
