@@ -440,3 +440,145 @@ Setelah menambahkan whitelist, uji apakah aplikasi yang sebelumnya diblokir kini
 
 ---
 
+### **10. Hardening PHP untuk Mencegah Remote Command Execution** 
+
+#### **Langkah 1: Instalasi PHP di Ubuntu**  
+1. **Update Repositori**:  
+   ```bash
+   sudo apt update
+   ```
+
+2. **Instal PHP dan Modul Apache**:  
+   ```bash
+   sudo apt install php libapache2-mod-php -y
+   ```
+
+3. **Verifikasi Instalasi**:  
+   ```bash
+   php -v  # Harus menampilkan versi PHP (contoh: PHP 8.2.x)
+   ```
+
+---
+
+#### **Langkah 2: Temukan File Konfigurasi PHP (`php.ini`)**  
+1. **Cari Lokasi `php.ini`**:  
+   ```bash
+   php --ini | grep "Loaded Configuration File"
+   ```  
+   Contoh output:  
+   ```
+   Loaded Configuration File => /etc/php/8.2/apache2/php.ini
+   ```  
+   *Catatan*: Jika menggunakan PHP-FPM, file bisa berada di `/etc/php/8.2/fpm/php.ini`.
+
+---
+
+#### **Langkah 3: Nonaktifkan Fungsi Berbahaya di PHP**  
+1. **Buka File `php.ini` dengan Editor**:  
+   ```bash
+   sudo nano /etc/php/8.2/apache2/php.ini  # Sesuaikan versi PHP
+   ```
+
+2. **Cari Baris `disable_functions`**:  
+   - Tekan `Ctrl+W` di nano, lalu ketik `disable_functions` untuk mencari.  
+   - Jika tidak ada, tambahkan baris berikut di bagian mana saja:  
+     ```ini
+     disable_functions = exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec
+     ```  
+   - Jika sudah ada, tambahkan fungsi-fungsi tersebut ke dalamnya (pisahkan dengan koma).
+
+3. **Simpan Perubahan**:  
+   - Tekan `Ctrl+O` → `Enter` → `Ctrl+X`.
+
+---
+
+#### **Langkah 4: Restart Apache**  
+```bash
+sudo systemctl restart apache2
+```
+
+---
+
+#### **Langkah 5: Verifikasi Konfigurasi**  
+1. **Buat File PHP untuk Uji Coba**:  
+   ```bash
+   sudo nano /var/www/html/test.php
+   ```  
+   Isi dengan kode berikut:  
+   ```php
+   <?php
+   echo "<h3>Uji Fungsi PHP yang Dinonaktifkan:</h3>";
+   echo "Hasil shell_exec('ls'): " . shell_exec('ls');
+   echo "Hasil exec('whoami'): " . exec('whoami');
+   ?>
+   ```
+
+2. **Akses File via Browser**:  
+   Buka: `http://[IP-server-anda]/test.php`.  
+   **Hasil yang Diharapkan**:  
+   - Tidak ada output dari `shell_exec()` atau `exec()`.  
+   - Pesan error mungkin muncul:  
+     ```
+     Warning: shell_exec() has been disabled for security reasons...
+     ```
+
+3. **Cek Log Error PHP**:  
+   ```bash
+   sudo tail -f /var/log/apache2/error.log
+   ```  
+   Pastikan log mencatat error terkait fungsi yang dinonaktifkan.
+
+---
+
+#### **Troubleshooting**  
+##### **Jika Fungsi Masih Bekerja**  
+1. **Pastikan Anda Mengedit File `php.ini` yang Benar**:  
+   - Verifikasi dengan perintah:  
+     ```bash
+     php -i | grep "disable_functions"
+     ```  
+   - Output harus menampilkan daftar fungsi yang sudah dinonaktifkan.
+
+2. **Pastikan Apache Di-restart**:  
+   ```bash
+   sudo systemctl restart apache2
+   ```
+
+---
+
+#### **Tambahan: Keamanan Ekstra untuk PHP**  
+1. **Aktifkan `open_basedir`**:  
+   Batasi PHP hanya bisa mengakses direktori tertentu.  
+   Edit `php.ini`:  
+   ```ini
+   open_basedir = /var/www/html
+   ```
+
+2. **Nonaktifkan `eval()`**:  
+   Tambahkan `eval` ke `disable_functions`:  
+   ```ini
+   disable_functions = ...,eval
+   ```
+
+3. **Aktifkan ModSecurity**:  
+   Pasang Web Application Firewall untuk memfilter serangan:  
+   ```bash
+   sudo apt install libapache2-mod-security2 -y
+   ```
+
+---
+
+#### **Contoh Kasus**  
+- **Sebelum Hardening**:  
+  ```php
+  <?php echo shell_exec('rm -rf /'); ?>  # Bisa menghapus seluruh sistem!
+  ```  
+  Output: File terhapus.  
+
+- **Setelah Hardening**:  
+  ```php
+  <?php echo shell_exec('rm -rf /'); ?>  
+  ```  
+  Output: Error **"shell_exec() has been disabled"**.
+
+---
