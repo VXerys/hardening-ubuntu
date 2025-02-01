@@ -1,6 +1,4 @@
-# hardening-ubuntu
-
-Berikut penjelasan **step-by-step** untuk 5 poin pertama Hardening Linux pada Ubuntu dengan detail maksimal:
+# Hardenig Ubuntu
 
 ---
 
