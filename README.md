@@ -1,4 +1,4 @@
-# Hardenig Ubuntu
+# Hardening Ubuntu
 
 https://github.com/VXerys/hardening-ubuntu
 
